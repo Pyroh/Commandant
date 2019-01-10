@@ -77,11 +77,12 @@ public enum CommandMode {
 
 /// Maintains the list of commands available to run.
 public final class CommandRegistry<ClientError: Error> {
+	private var orderedVerbs: [String] = []
 	private var commandsByVerb: [String: CommandWrapper<ClientError>] = [:]
 
 	/// All available commands.
 	public var commands: [CommandWrapper<ClientError>] {
-		return commandsByVerb.values.sorted { return $0.verb < $1.verb }
+		return orderedVerbs.compactMap { commandsByVerb[$0] }
 	}
 
 	public init() {}
@@ -96,6 +97,7 @@ public final class CommandRegistry<ClientError: Error> {
 		where C.ClientError == ClientError
 	{
 		for command in commands {
+			orderedVerbs.append(command.verb)
 			commandsByVerb[command.verb] = CommandWrapper(command)
 		}
 		return self
