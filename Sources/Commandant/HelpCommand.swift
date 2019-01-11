@@ -48,11 +48,17 @@ public struct HelpCommand<ClientError: Error>: CommandProtocol {
 
 		print("Available commands:\n")
 
-		let maxVerbLength = self.registry.commands.map { $0.verb.count }.max() ?? 0
+		let maxVerbLength = self.registry.commands.compactMap {
+			($0 as? CommandWrapper<ClientError>)?.verb.count
+		}.max() ?? 0
 
 		for command in self.registry.commands {
-			let padding = repeatElement(Character(" "), count: maxVerbLength - command.verb.count)
-			print("   \(command.verb)\(String(padding))   \(command.function)")
+			if let command = command as? CommandWrapper<ClientError> {
+				let padding = repeatElement(Character(" "), count: maxVerbLength - command.verb.count)
+				print("   \(command.verb)\(String(padding))   \(command.function)")
+			} else {
+				print()
+			}
 		}
 
 		return .success(())

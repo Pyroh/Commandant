@@ -30,7 +30,9 @@ public protocol CommandProtocol {
 }
 
 /// A type-erased command.
-public struct CommandWrapper<ClientError: Error> {
+public protocol HelpDisplayableProtocol { }
+
+public struct CommandWrapper<ClientError: Error>: HelpDisplayableProtocol {
 	public let verb: String
 	public let function: String
 	
@@ -65,6 +67,10 @@ public struct CommandWrapper<ClientError: Error> {
 	}
 }
 
+public struct BlankLineWrapper: HelpDisplayableProtocol {
+	init() { }
+}
+
 /// Describes the "mode" in which a command should run.
 public enum CommandMode {
 	/// Options should be parsed from the given command-line arguments.
@@ -77,13 +83,19 @@ public enum CommandMode {
 
 /// Maintains the list of commands available to run.
 public final class CommandRegistry<ClientError: Error> {
+	private typealias RealCommand = CommandWrapper<ClientError>
+	
 	private var orderedVerbs: [String] = []
-	private var commandsByVerb: [String: CommandWrapper<ClientError>] = [:]
+	private var commandsByVerb: [String: HelpDisplayableProtocol] = [:]
 
 	/// All available commands.
-	public var commands: [CommandWrapper<ClientError>] {
+	public var commands: [HelpDisplayableProtocol] {
 		if sortCommandsAlphabetically {
-			return commandsByVerb.values.sorted { return $0.verb < $1.verb }
+			return commandsByVerb.values.filter {
+				$0 is CommandWrapper<ClientError>
+			}.sorted {
+				($0 as! CommandWrapper<ClientError>).verb < ($1 as! CommandWrapper<ClientError>).verb
+			}
 		} else {
 			return orderedVerbs.compactMap { commandsByVerb[$0] }
 		}
@@ -104,7 +116,11 @@ public final class CommandRegistry<ClientError: Error> {
 	{
 		for command in commands {
 			orderedVerbs.append(command.verb)
-			commandsByVerb[command.verb] = CommandWrapper(command)
+			if command is BlankLine<ClientError> {
+				commandsByVerb[command.verb] = BlankLineWrapper()
+			} else {
+				commandsByVerb[command.verb] = CommandWrapper(command)
+			}
 		}
 		return self
 	}
@@ -120,7 +136,7 @@ public final class CommandRegistry<ClientError: Error> {
 	/// Returns the command matching the given verb, or nil if no such command
 	/// is registered.
 	public subscript(verb: String) -> CommandWrapper<ClientError>? {
-		return commandsByVerb[verb]
+		return commandsByVerb[verb] as? CommandWrapper<ClientError>
 	}
 }
 
