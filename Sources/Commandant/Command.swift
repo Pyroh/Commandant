@@ -82,8 +82,14 @@ public final class CommandRegistry<ClientError: Error> {
 
 	/// All available commands.
 	public var commands: [CommandWrapper<ClientError>] {
-		return orderedVerbs.compactMap { commandsByVerb[$0] }
+		if sortCommandsAlphabetically {
+			return commandsByVerb.values.sorted { return $0.verb < $1.verb }
+		} else {
+			return orderedVerbs.compactMap { commandsByVerb[$0] }
+		}
 	}
+	
+	public var sortCommandsAlphabetically: Bool = false
 
 	public init() {}
 
