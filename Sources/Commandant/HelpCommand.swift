@@ -36,7 +36,7 @@ public struct HelpCommand<ClientError: Error>: CommandProtocol {
 	public func run(_ options: Options) -> Result<(), ClientError> {
 		if let verb = options.verb {
 			if let command = self.registry[verb] {
-				print(command.function)
+				print("\n\(command.function)")
 				if let usageError = command.usage() {
 					print("\n\(usageError)")
 				}
